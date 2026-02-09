@@ -90,6 +90,34 @@ app.post("/api/messages", (req, res) => {
   res.status(201).json(entry);
 });
 
+// Telegram webhook - receives messages sent to the bot
+app.post("/api/telegram-webhook", (req, res) => {
+  const update = req.body;
+  const text = update?.message?.text;
+
+  if (!text) {
+    return res.sendStatus(200);
+  }
+
+  const from = update.message.from;
+  const sender = from.username
+    ? `@${from.username}`
+    : [from.first_name, from.last_name].filter(Boolean).join(" ");
+
+  const messages = readMessages();
+  const entry = {
+    id: Date.now(),
+    message: text,
+    timestamp: new Date().toISOString(),
+    source: "telegram",
+    sender,
+  };
+  messages.push(entry);
+  writeMessages(messages);
+
+  res.sendStatus(200);
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
